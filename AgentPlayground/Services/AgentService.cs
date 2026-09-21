@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using AgentPlayground.Models;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Hosting;
 using Microsoft.Extensions.AI;
 
 namespace AgentPlayground.Services;
@@ -20,7 +19,7 @@ public class AgentService([FromKeyedServices("PlaygroundAgent")] AIAgent agent, 
     /// <returns>The stream of <see cref="Response"/> objects produced by the agent.</returns>
     public async IAsyncEnumerable<Response> AskStreamingAsync(Question question, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var session = await sessionStore.GetSessionAsync(agent, question.ConversationId.ToString(), cancellationToken);
+        var session = await sessionStore.GetSessionAsync(agent, new(question.ConversationId.ToString()), cancellationToken);
 
         var updates = new List<AgentResponseUpdate>();
 
@@ -51,7 +50,7 @@ public class AgentService([FromKeyedServices("PlaygroundAgent")] AIAgent agent, 
             }
         }
 
-        await sessionStore.SaveSessionAsync(agent, question.ConversationId.ToString(), session, cancellationToken);
+        await sessionStore.SaveSessionAsync(agent, new(question.ConversationId.ToString()), session!, cancellationToken);
         var response = updates.ToAgentResponse();
 
         yield return new(question.ConversationId, null, StreamState.Completed, response.Usage);

@@ -37,8 +37,9 @@ builder.Services.AddChatClient(_ =>
     var openAIClientOptions = new OpenAIClientOptions
     {
         Endpoint = new(aiSettings.Endpoint),
-        Transport = new HttpClientPipelineTransport(new HttpClient(new TraceHttpClientHandler()))
+        Transport = new HttpClientPipelineTransport(new(new TraceHttpClientHandler()))
     };
+
     openAIClientOptions.AddPolicy(new ImageDeploymentPolicy(aiSettings.ImageDeployment), PipelinePosition.PerCall);
 
     var chatClient = new OpenAIClient(new ApiKeyCredential(aiSettings.ApiKey), openAIClientOptions)
@@ -128,20 +129,3 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
-internal class ImageDeploymentPolicy(string deployment) : PipelinePolicy
-{
-    private const string HeaderName = "x-ms-oai-image-generation-deployment";
-
-    public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index)
-    {
-        message.Request.Headers.Set(HeaderName, deployment);
-        ProcessNext(message, pipeline, index);
-    }
-
-    public override ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index)
-    {
-        message.Request.Headers.Set(HeaderName, deployment);
-        return ProcessNextAsync(message, pipeline, index);
-    }
-}

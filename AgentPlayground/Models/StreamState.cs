@@ -6,6 +6,5 @@ public enum StreamState
     FunctionCalling,
     ImageGeneration,
     Answering,
-    ImageGeneration,
     Completed
 }

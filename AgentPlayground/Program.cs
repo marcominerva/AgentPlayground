@@ -74,19 +74,19 @@ builder.Services.AddAIAgent("PlaygroundAgent", (services, key) =>
                 Effort = ReasoningEffort.Low,
                 Output = ReasoningOutput.Summary
             },
-            Tools = [new HostedWebSearchTool(), new HostedImageGenerationTool()
+            Tools = [new HostedWebSearchTool(),
+                new HostedImageGenerationTool
+                {
+                    Options = new()
                     {
-                        Options = new()
-                        {
-                            ModelId = aiSettings.ImageDeployment,
-                            Count = 1,
-                            //Supported sizes are 1024x1024, 1024x1536, 1536x1024, and auto.
-                            ImageSize = new(1024, 1024),
-                            MediaType = MediaTypeNames.Image.Png,
-                            StreamingCount = 3
-                        }
-                    },
-                    AIFunctionFactory.Create(DateTimeTools.GetCurrentDateTime)]
+                        ModelId = aiSettings.ImageDeployment,
+                        Count = 1,
+                        ImageSize = new(1536,1024),
+                        MediaType = MediaTypeNames.Image.Png,
+                        StreamingCount = 3
+                    }
+                },
+                AIFunctionFactory.Create(DateTimeTools.GetCurrentDateTime)]
         },
         ChatHistoryProvider = new InMemoryChatHistoryProvider(new()
         {
@@ -98,7 +98,8 @@ builder.Services.AddAIAgent("PlaygroundAgent", (services, key) =>
     services: services);
 }, ServiceLifetime.Scoped)
 //.WithSessionStore((services, _) => services.GetRequiredService<HybridCacheSessionStoreService>(), withIsolation: false)
-.WithInMemorySessionStore(withIsolation: false);
+.WithInMemorySessionStore(withIsolation: false)
+;
 
 builder.Services.AddScoped<AgentService>();
 
@@ -127,3 +128,20 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+internal class ImageDeploymentPolicy(string deployment) : PipelinePolicy
+{
+    private const string HeaderName = "x-ms-oai-image-generation-deployment";
+
+    public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index)
+    {
+        message.Request.Headers.Set(HeaderName, deployment);
+        ProcessNext(message, pipeline, index);
+    }
+
+    public override ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index)
+    {
+        message.Request.Headers.Set(HeaderName, deployment);
+        return ProcessNextAsync(message, pipeline, index);
+    }
+}

@@ -45,6 +45,15 @@ input[type="checkbox"] + label {
     border-radius: 8px;
 }
 
+.generated-image {
+    display: block;
+    width: 30%;
+    max-width: 30%;
+    height: auto;
+    margin-top: 1rem;
+    border-radius: 6px;
+}
+
 .typing-indicator {
     display: flex;
     align-items: center;

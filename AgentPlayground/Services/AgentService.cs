@@ -1,8 +1,10 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Net.Mime;
+using System.Runtime.CompilerServices;
 using AgentPlayground.Models;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Extensions.AI;
+using OpenAI.Responses;
 
 namespace AgentPlayground.Services;
 
@@ -60,11 +62,34 @@ public class AgentService([FromKeyedServices("PlaygroundAgent")] AIAgent agent, 
                         break;
                 }
             }
+
+            var finalImage = GetFinalImage(update);
+            if (finalImage is not null)
+            {
+                yield return new(question.ConversationId, finalImage.Uri, StreamState.ImageGeneration);
+            }
         }
 
         await sessionStore.SaveSessionAsync(agent, question.ConversationId.ToString(), session, cancellationToken);
         var response = updates.ToAgentResponse();
 
         yield return new(question.ConversationId, null, StreamState.Completed, response.Usage);
+
+        static DataContent? GetFinalImage(AgentResponseUpdate update)
+        {
+            for (var raw = update.RawRepresentation; raw is not null; raw = (raw as ChatResponseUpdate)?.RawRepresentation)
+            {
+                if (raw is StreamingResponseOutputItemDoneUpdate { Item: ImageGenerationCallResponseItem image })
+                {
+                    var mediaType = image.OutputFileFormat.HasValue ?
+                        $"image/{image.OutputFileFormat.Value}" : MediaTypeNames.Image.Png;
+
+                    var dataContent = new DataContent(image.ImageResultBytes, mediaType);
+                    return dataContent;
+                }
+            }
+
+            return null;
+        }
     }
 }

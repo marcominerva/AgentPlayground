@@ -67,13 +67,13 @@
                                     <div class="message-content">
                                         <div class="streaming-content">
                                             <div class="streaming-text @(message.Status == MessageStatus.Streaming ? "streaming-text-with-spinner" : "")">
-                                                @if (!string.IsNullOrEmpty(message.ImageBase64Data))
-                                                {
-                                                    <img src="@message.ImageBase64Data" class="generated-image" alt="Generated image" />
-                                                }
                                                 @if (!string.IsNullOrWhiteSpace(message.Text))
                                                 {
                                                     <Markdown Content="@message.Text" style="overflow-y:auto;" />
+                                                }
+                                                @if (!string.IsNullOrEmpty(message.ImageBase64Data))
+                                                {
+                                                    <img src="@message.ImageBase64Data" class="generated-image" alt="Generated image" />
                                                 }
                                             </div>
                                             @if (message.Status == MessageStatus.Streaming)
